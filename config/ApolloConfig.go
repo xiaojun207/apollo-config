@@ -6,20 +6,23 @@ import (
 	"log"
 )
 
-type Conf interface  {
+type Conf interface {
 	agollo.Agollo
 }
 
 var LogLevel = "debug"
 
-func InitConfig(configServerURL, appID string) agollo.Agollo {
+func InitConfig(configServerURL, appID string, loadConfig func(Config Conf)) agollo.Agollo {
 
 	log.Println("appID:", appID)
-	res, err := agollo.New(configServerURL, appID, agollo.AutoFetchOnCacheMiss())
+	apolloConfig, err := agollo.New(configServerURL, appID, agollo.AutoFetchOnCacheMiss())
 	if err != nil {
 		panic(err)
 	}
-	return res
+
+	go LoadApolloWatch(apolloConfig, loadConfig)
+
+	return apolloConfig
 }
 
 func LoadApolloWatch(Config agollo.Agollo, loadConfig func(Config Conf)) {
