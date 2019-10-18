@@ -6,13 +6,13 @@ import (
 	"log"
 )
 
-type Conf interface {
+type ApolloConfig interface {
 	agollo.Agollo
 }
 
 var LogLevel = "debug"
 
-func InitConfig(configServerURL, appID string, loadConfig func(Config Conf)) agollo.Agollo {
+func InitConfig(configServerURL, appID string, loadConfig func(conf ApolloConfig)) agollo.Agollo {
 
 	log.Println("appID:", appID)
 	apolloConfig, err := agollo.New(configServerURL, appID, agollo.AutoFetchOnCacheMiss())
@@ -25,17 +25,17 @@ func InitConfig(configServerURL, appID string, loadConfig func(Config Conf)) ago
 	return apolloConfig
 }
 
-func LoadApolloWatch(Config agollo.Agollo, loadConfig func(Config Conf)) {
-	loadConfig(Config)
-	errorCh := Config.Start()
+func LoadApolloWatch(conf agollo.Agollo, loadConfig func(conf ApolloConfig)) {
+	loadConfig(conf)
+	errorCh := conf.Start()
 
 	// 监听apollo配置更改事件
 	// 返回namespace和其变化前后的配置,以及可能出现的error
-	watchCh := Config.Watch()
+	watchCh := conf.Watch()
 
 	stop := make(chan bool)
 	watchNamespace := "application"
-	watchNSCh := Config.WatchNamespace(watchNamespace, stop)
+	watchNSCh := conf.WatchNamespace(watchNamespace, stop)
 
 	go func() {
 		for {
@@ -43,7 +43,7 @@ func LoadApolloWatch(Config agollo.Agollo, loadConfig func(Config Conf)) {
 			case err := <-errorCh:
 				fmt.Println("Error:", err)
 			case <-watchCh:
-				loadConfig(Config)
+				loadConfig(conf)
 			case <-watchNSCh:
 				//fmt.Println("Watch Namespace", watchNamespace, resp)
 			}
@@ -53,6 +53,6 @@ func LoadApolloWatch(Config agollo.Agollo, loadConfig func(Config Conf)) {
 	select {}
 }
 
-func GetConf(Config Conf, key, defaultValue string) string {
-	return Config.Get(key, agollo.WithDefault(defaultValue))
+func GetConf(conf ApolloConfig, key, defaultValue string) string {
+	return conf.Get(key, agollo.WithDefault(defaultValue))
 }
