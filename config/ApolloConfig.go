@@ -6,7 +6,7 @@ import (
 	"log"
 )
 
-type ApolloConfig interface {
+type ApolloConfig struct {
 	agollo.Agollo
 }
 
@@ -25,7 +25,8 @@ func InitConfig(configServerURL, appID string, loadConfig func(conf ApolloConfig
 	return apolloConfig
 }
 
-func LoadApolloWatch(conf agollo.Agollo, loadConfig func(conf ApolloConfig)) {
+func LoadApolloWatch(apolloConfig agollo.Agollo, loadConfig func(conf ApolloConfig)) {
+	var conf = ApolloConfig{apolloConfig}
 	loadConfig(conf)
 	errorCh := conf.Start()
 
@@ -53,6 +54,6 @@ func LoadApolloWatch(conf agollo.Agollo, loadConfig func(conf ApolloConfig)) {
 	select {}
 }
 
-func GetConf(conf ApolloConfig, key, defaultValue string) string {
-	return conf.Get(key, agollo.WithDefault(defaultValue))
+func (e *ApolloConfig) Get(key, defaultValue string) string {
+	return e.Agollo.Get(key, agollo.WithDefault(defaultValue))
 }
